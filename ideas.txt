@@ -1,0 +1,18 @@
+let's go
+
+theme: 'stuck in a loop'
+
+idea:
+
+orbitor
+
+an orbiting ship
+
+try to avoid asteroids and stay alive on a safe orbit
+
+
+schedule:
+
+day 1: game design + art
+day 2: physics
+day 3: flowers
