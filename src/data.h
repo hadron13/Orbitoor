@@ -1,7 +1,6 @@
 #define G 0.005
 #define scale 3
 #define asteroids_max 5
-
 typedef enum GameStateE{
     menu,
     play,

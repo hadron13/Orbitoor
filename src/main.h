@@ -12,11 +12,21 @@ SDL_Texture *    spritesheet,
             *    how1,
             *    game_over1,
             *    pause1,
-            *    tragetory;
+            *    tragectory;
 
 SDL_Point mouse = {0,0};
 
-int safe_starting;
+
+int safe_starting,
+    FPS = 60,
+    width = 1280,
+    height = 720,
+    tragectory_steps = 1500,
+    tragectory_update_timer = 10;
+
+SDL_Point tragectory_prediction[1500];
+
+bool menu_rendered,running,potato,tragectory_request;
 
 SDL_Rect        asteroid_textures[] =   {{64,0,16,16},{64,16,16,16},{64+16,0,16,16}},
                 sun_texture =           {0,0,64,64},
@@ -40,11 +50,17 @@ GameState state = menu;
 void game_start(void);
 
 void add_asteroid(Asteroid a);
-void render(SDL_Renderer* r);
-void menu_render(SDL_Renderer*r);
+
+void render();
+void menu_render(void);
 
 void update(void);
-void update_tragectory(int steps,SDL_Renderer* r);
+void get_menu_input(void);
+
+void update_tragectory(void);
+void render_tragectory(void);
+
+void update_state(GameState s);
 
 double get_distance(double x1,double y1,double x2,double y2);
 double vec_distance(Vector2 v1,Vector2 v2);
