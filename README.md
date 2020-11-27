@@ -7,4 +7,5 @@
 * ### [SDL2_image](https://www.libsdl.org/projects/SDL_image/)
 ## Compiling
 ### this could be compiled with any C/C++ compiler
+### **DEBUG** macro defines to load assets with full path to work on GDB and MSVC debugger
 ### game assets not included
