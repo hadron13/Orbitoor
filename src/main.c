@@ -8,7 +8,9 @@ int main(int argc,char*argv[]){
     window = SDL_CreateWindow("Orbitoor",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,width,720,0);
 
     renderer = SDL_CreateRenderer(window,-1,SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-
+    
+    //load images
+    
     #ifndef DEBUG
     spritesheet = IMG_LoadTexture(renderer,"assets\\sprites.png");
     menu1 = IMG_LoadTexture(renderer,"assets\\menu.png");
@@ -34,8 +36,14 @@ int main(int argc,char*argv[]){
 
     running = true;
     SDL_Event handler;
+    
+    //main loop
+    
     while (running){
         start_MS = SDL_GetTicks();
+        
+        //inputs
+        
         while (SDL_PollEvent(&handler)){
             switch (handler.type){
                 case SDL_QUIT:
@@ -109,7 +117,7 @@ int main(int argc,char*argv[]){
                     break;
                 }
         }
-
+        //do stuff for each state
         switch (state){
         case play:
             update();
@@ -126,7 +134,6 @@ int main(int argc,char*argv[]){
             SDL_Delay(delay);
         }
     }
-
     SDL_DestroyTexture(spritesheet);
     SDL_DestroyTexture(menu1);
     SDL_DestroyTexture(how1);
@@ -141,6 +148,8 @@ int main(int argc,char*argv[]){
     SDL_Quit();
     return 0;
 }
+
+//detects any button pressed in menu
 void get_menu_input(void){
     switch (state){
     case menu:
@@ -190,7 +199,9 @@ void update_state(GameState s){
     }
 }
 
+//selects image to show in menu state
 void menu_render(){
+    //renders image only 1 time
     if(menu_rendered)
         return;
     switch (state)
@@ -214,11 +225,12 @@ void menu_render(){
     SDL_RenderClear(renderer);
     menu_rendered = true;
 }
-
+//utility
 double to_radians(double degrees){
     return degrees*(3.14159265359/180);
 }
 
+//adds an asteroid to the array
 void add_asteroid(Asteroid a){
     for (size_t i = 0; i < asteroids_max; i++){
         if(!asteroids[i].show){
@@ -228,16 +240,22 @@ void add_asteroid(Asteroid a){
     }
 }
 
-void update(void){
 
+//update everything for the next frame
+void update(void){
+    
+    
+    //timer for updating the tragectory
     tragectory_update_timer--;
     if(tragectory_update_timer==0){
         tragectory_request = true;
         tragectory_update_timer = 10;
     }
-
+    
+    //doing asteroid stuff
     for (size_t i = 0; i < asteroids_max; i++){
         
+        //updates asteroid positions
         Asteroid actual = asteroids[i];
         if(!actual.show)
             continue;
@@ -247,13 +265,14 @@ void update(void){
         actual.body.pos.y+=actual.body.velocity.y;
         actual.body.center_pos = (Vector2){actual.body.pos.x+(8*scale),actual.body.pos.y+(8*scale)};
 
-        
+        //checks asteroid destroying/exit
         if (actual.body.pos.x < 0     ||
             actual.body.pos.x > 1280  ||
             actual.body.pos.y > 720)    actual.show = false;
         else if(vec_distance(actual.body.center_pos,sun_pos)-(30*scale)<1)
             actual.show = false;
         
+        //checks asteroid collision
         Vector2 to_ship = vec_compare(actual.body.center_pos,shipb.center_pos);
         if(vec_distance(zero,to_ship) - (10*scale) < 1){
             shipb.velocity = vec_add(shipb.velocity,vec_divideN(actual.body.velocity,2));
@@ -262,20 +281,23 @@ void update(void){
         asteroids[i] = actual;
     }
     
+    //applying engine thrust vector
     if(ship.engines){
-
         Vector2 engine_force = {SDL_cos(to_radians(shipb.angle-90))/100/shipb.mass,SDL_sin(to_radians(shipb.angle-90))/100/shipb.mass};
         shipb.velocity = vec_add(shipb.velocity,engine_force);
     }
 
     shipb.velocity = vec_add(shipb.velocity,gravity(shipb.center_pos,shipb.mass));
-
+    
+    
+    //rotating the ship
     if(ship.right){
         shipb.angle+=3;
     }else if(ship.left){
         shipb.angle-=3;
     }
-
+    
+    //checking gameover
     if(vec_distance(shipb.center_pos,sun_pos)-(40*scale)<1){
         update_state(game_over);
     }else if(   shipb.pos.x < 0     ||
@@ -283,12 +305,15 @@ void update(void){
                 shipb.pos.y < 0     ||
                 shipb.pos.y > 720) update_state(game_over);
     
+    //updating position
     shipb.pos = vec_add(shipb.pos,shipb.velocity);
     shipb.center_pos = (Vector2){shipb.pos.x+(8*scale),shipb.pos.y+(8*scale)};
-
+    
+    //no asteroid will appear during the first moments
     if(safe_starting>0)
         safe_starting--;
-
+    
+    //generate new asteroids
     if(!safe_starting)
     if(rand()%20==1){
         double angle = to_radians((rand()%90)+45);
@@ -298,10 +323,12 @@ void update(void){
                                 {SDL_cos(angle)*speed,SDL_sin(angle)*speed},(rand()%50)+40,rand()%360} ,rand()%3,true};
         add_asteroid(new_asteroid);
     }
+    //update tragectory if needed
     if(tragectory_request)
         update_tragectory();
 }
 
+//render stuff
 void render(){
     if(tragectory_request)
         render_tragectory();
@@ -330,6 +357,7 @@ void render(){
     SDL_RenderClear(renderer);
 }
 
+//the secret of everything in this game
 Vector2 gravity(Vector2 pos,double mass){
     Vector2 difference = {sun_pos.x-pos.x,sun_pos.y-pos.y};
     
@@ -343,6 +371,7 @@ Vector2 gravity(Vector2 pos,double mass){
     return acceleration;
 }
 
+//updates tragectory lines
 void update_tragectory(){
     Vector2 pos = shipb.center_pos;
     Vector2 tmp_force = vec_multiplyN(shipb.velocity,(potato)?12:2);
@@ -356,6 +385,7 @@ void update_tragectory(){
     }
 }
 
+//generates tragectory image
 void render_tragectory(){
     SDL_SetRenderTarget(renderer,tragectory);
     SDL_SetRenderDrawColor(renderer,0,0,0,255);
@@ -367,6 +397,7 @@ void render_tragectory(){
     SDL_SetRenderTarget(renderer,NULL);
 }
 
+//start the game
 void game_start(){
 
     srand(time(0));
@@ -378,12 +409,11 @@ void game_start(){
     ship = (Ship){ { initial_pos,{sun_pos.x,shipb.pos.y+8*scale},{1.5,0},1,90},false,false,false};
 
     tragectory_request = true;
-    //double distance = vec_distance(shipb.center_pos,sun_pos);
-    //double velocity = SDL_sqrt(G*sun_mass*((2/distance)-(1/vec_distance(shipb.center_pos,sun_pos))));
-    //shipb.velocity = (Vector2){velocity,0};
-    //SDL_Log("%f",velocity);
+
     safe_starting = 60*5;
-}//1.638802
+}
+
+//vector utility functions
 
 #pragma region vector math
 Vector2 vec_add(Vector2 v1,Vector2 v2){
